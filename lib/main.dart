@@ -44,7 +44,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   void getLyric() async {
-    var str = await rootBundle.loadString("assets/last_night/last_night.lrc");
+    var str = await DefaultAssetBundle.of(context)
+        .loadString("assets/last_night/last_night.lrc");
     lyricsModelBuilder.bindLyricToMain(str);
     lyricsReaderModel = lyricsModelBuilder.getModel();
     refreshLyric();
