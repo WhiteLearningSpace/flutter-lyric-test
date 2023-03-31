@@ -1,7 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_lyric/lyric_helper.dart';
 import 'package:flutter_lyric/lyrics_reader.dart';
 import 'package:flutter_lyric/lyrics_reader_model.dart';
 
@@ -31,6 +30,7 @@ class _MyAppState extends State<MyApp> {
   bool isTap = false;
 
   final LyricsModelBuilder lyricsModelBuilder = LyricsModelBuilder.create();
+  LyricsReaderModel? lyricsReaderModel;
   var lyricUI = UINetease();
 
   void refreshLyric() {
@@ -46,6 +46,7 @@ class _MyAppState extends State<MyApp> {
   void getLyric() async {
     var str = await rootBundle.loadString("assets/last_night/last_night.lrc");
     lyricsModelBuilder.bindLyricToMain(str);
+    lyricsReaderModel = lyricsModelBuilder.getModel();
     refreshLyric();
   }
 
@@ -72,7 +73,7 @@ class _MyAppState extends State<MyApp> {
     return Container(
       decoration: const BoxDecoration(color: Colors.black45),
       child: LyricsReader(
-        model: lyricsModelBuilder.getModel(),
+        model: lyricsReaderModel,
         padding: const EdgeInsets.symmetric(horizontal: 40),
         position: sliderCurrentPos.toInt(),
         lyricUi: lyricUI,
@@ -116,7 +117,6 @@ class _MyAppState extends State<MyApp> {
 
   // 音频播放器
   List<Widget> buildPlayer() {
-    print(LyricSpanInfo().index);
     return [
       if (sliderCurrentPos < maxValue)
         Slider(
@@ -212,6 +212,33 @@ class _MyAppState extends State<MyApp> {
               audioPlayer?.setPlaybackRate(3.0);
             },
             child: const Text("3.0x"),
+          ),
+        ],
+      ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            onPressed: () {
+              var line =
+                  lyricsReaderModel?.getCurrentLine(sliderCurrentPos.toInt());
+              var startTime = lyricsReaderModel?.lyrics[line - 1].startTime;
+              if (startTime is int) {
+                audioPlayer?.seek(Duration(milliseconds: startTime));
+              }
+            },
+            icon: const Icon(Icons.keyboard_arrow_left),
+          ),
+          IconButton(
+            onPressed: () {
+              var line =
+                  lyricsReaderModel?.getCurrentLine(sliderCurrentPos.toInt());
+              var startTime = lyricsReaderModel?.lyrics[line + 1].startTime;
+              if (startTime is int) {
+                audioPlayer?.seek(Duration(milliseconds: startTime));
+              }
+            },
+            icon: const Icon(Icons.keyboard_arrow_right),
           ),
         ],
       )
