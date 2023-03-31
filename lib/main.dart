@@ -139,40 +139,68 @@ class _MyAppState extends State<MyApp> {
             audioPlayer?.seek(Duration(milliseconds: value.toInt()));
           },
         ),
-      IconButton(
-        onPressed: () async {
-          if (audioPlayer == null) {
-            audioPlayer = AudioPlayer()
-              ..play(AssetSource("last_night/last_night.mp3"));
-            setState(() {
-              isPlaying = true;
-            });
-            audioPlayer?.setReleaseMode(ReleaseMode.loop);
-            audioPlayer?.onDurationChanged.listen((event) {
-              setState(() {
-                maxValue = event.inMilliseconds.toDouble();
-              });
-            });
-            audioPlayer?.onPositionChanged.listen((event) {
-              if (isTap) return;
-              setState(() {
-                sliderCurrentPos = event.inMilliseconds.toDouble();
-              });
-            });
-            audioPlayer?.onPlayerStateChanged.listen((state) {
-              setState(() {
-                isPlaying = state == PlayerState.playing;
-              });
-            });
-          } else {
-            isPlaying ? audioPlayer?.pause() : audioPlayer?.resume();
-            setState(() {
-              isPlaying = !isPlaying;
-            });
-          }
-        },
-        icon:
-            !isPlaying ? const Icon(Icons.play_arrow) : const Icon(Icons.pause),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            onPressed: () {
+              var line =
+                  lyricsReaderModel?.getCurrentLine(sliderCurrentPos.toInt());
+              var startTime = lyricsReaderModel?.lyrics[line - 1].startTime;
+              if (startTime is int) {
+                audioPlayer?.seek(Duration(milliseconds: startTime));
+              }
+            },
+            icon: const Icon(Icons.keyboard_arrow_left),
+          ),
+          IconButton(
+            onPressed: () async {
+              if (audioPlayer == null) {
+                audioPlayer = AudioPlayer()
+                  ..play(AssetSource("last_night/last_night.mp3"));
+                setState(() {
+                  isPlaying = true;
+                });
+                audioPlayer?.setReleaseMode(ReleaseMode.loop);
+                audioPlayer?.onDurationChanged.listen((event) {
+                  setState(() {
+                    maxValue = event.inMilliseconds.toDouble();
+                  });
+                });
+                audioPlayer?.onPositionChanged.listen((event) {
+                  if (isTap) return;
+                  setState(() {
+                    sliderCurrentPos = event.inMilliseconds.toDouble();
+                  });
+                });
+                audioPlayer?.onPlayerStateChanged.listen((state) {
+                  setState(() {
+                    isPlaying = state == PlayerState.playing;
+                  });
+                });
+              } else {
+                isPlaying ? audioPlayer?.pause() : audioPlayer?.resume();
+                setState(() {
+                  isPlaying = !isPlaying;
+                });
+              }
+            },
+            icon: !isPlaying
+                ? const Icon(Icons.play_arrow)
+                : const Icon(Icons.pause),
+          ),
+          IconButton(
+            onPressed: () {
+              var line =
+                  lyricsReaderModel?.getCurrentLine(sliderCurrentPos.toInt());
+              var startTime = lyricsReaderModel?.lyrics[line + 1].startTime;
+              if (startTime is int) {
+                audioPlayer?.seek(Duration(milliseconds: startTime));
+              }
+            },
+            icon: const Icon(Icons.keyboard_arrow_right),
+          ),
+        ],
       ),
     ];
   }
@@ -217,30 +245,7 @@ class _MyAppState extends State<MyApp> {
       ),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            onPressed: () {
-              var line =
-                  lyricsReaderModel?.getCurrentLine(sliderCurrentPos.toInt());
-              var startTime = lyricsReaderModel?.lyrics[line - 1].startTime;
-              if (startTime is int) {
-                audioPlayer?.seek(Duration(milliseconds: startTime));
-              }
-            },
-            icon: const Icon(Icons.keyboard_arrow_left),
-          ),
-          IconButton(
-            onPressed: () {
-              var line =
-                  lyricsReaderModel?.getCurrentLine(sliderCurrentPos.toInt());
-              var startTime = lyricsReaderModel?.lyrics[line + 1].startTime;
-              if (startTime is int) {
-                audioPlayer?.seek(Duration(milliseconds: startTime));
-              }
-            },
-            icon: const Icon(Icons.keyboard_arrow_right),
-          ),
-        ],
+        children: [],
       )
     ];
   }
