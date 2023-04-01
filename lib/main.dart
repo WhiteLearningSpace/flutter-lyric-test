@@ -3,25 +3,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_lyric/lyrics_reader.dart';
 import 'package:flutter_lyric/lyrics_reader_model.dart';
+import 'package:video_player/video_player.dart';
 
 void main() {
   runApp(
-    const MaterialApp(
-      home: Scaffold(
-        body: MyApp(),
+    MaterialApp(
+      home: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text("test"),
+            bottom: const TabBar(
+              tabs: [
+                Tab(
+                  icon: Icon(Icons.audiotrack),
+                ),
+                Tab(
+                  icon: Icon(Icons.video_call),
+                )
+              ],
+            ),
+          ),
+          body: const TabBarView(
+            children: [
+              MyAudioPlayer(),
+              MyVideoPlayer(),
+            ],
+          ),
+        ),
       ),
     ),
   );
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+class MyAudioPlayer extends StatefulWidget {
+  const MyAudioPlayer({Key? key}) : super(key: key);
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<MyAudioPlayer> createState() => _MyAudioPlayerState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAudioPlayerState extends State<MyAudioPlayer>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   AudioPlayer? audioPlayer;
   double sliderCurrentPos = 0;
   double maxValue = 1;
@@ -45,7 +71,7 @@ class _MyAppState extends State<MyApp> {
 
   void getLyric() async {
     var str = await DefaultAssetBundle.of(context)
-        .loadString("assets/last_night/last_night.lrc");
+        .loadString("assets/last_night.lrc");
     lyricsModelBuilder.bindLyricToMain(str);
     lyricsReaderModel = lyricsModelBuilder.getModel();
     refreshLyric();
@@ -53,9 +79,9 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           buildLyricReader(),
           Text(
@@ -158,7 +184,7 @@ class _MyAppState extends State<MyApp> {
             onPressed: () async {
               if (audioPlayer == null) {
                 audioPlayer = AudioPlayer()
-                  ..play(AssetSource("last_night/last_night.mp3"));
+                  ..play(AssetSource("last_night.mp3"));
                 setState(() {
                   isPlaying = true;
                 });
@@ -244,10 +270,149 @@ class _MyAppState extends State<MyApp> {
           ),
         ],
       ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [],
-      )
     ];
+  }
+}
+
+class MyVideoPlayer extends StatefulWidget {
+  const MyVideoPlayer({Key? key}) : super(key: key);
+
+  @override
+  State<MyVideoPlayer> createState() => _MyVideoPlayerState();
+}
+
+class _MyVideoPlayerState extends State<MyVideoPlayer>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  late VideoPlayerController _controller;
+
+  Future<ClosedCaptionFile> _loadCaptions() async {
+    final String fileContents = await DefaultAssetBundle.of(context)
+        .loadString('assets/bumble_bee_captions.srt');
+    return SubRipCaptionFile(fileContents);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.asset(
+      "assets/Butterfly-209.mp4",
+      closedCaptionFile: _loadCaptions(),
+    );
+    _controller.addListener(() {
+      setState(() {});
+    });
+    _controller.setLooping(true);
+    _controller.initialize().then((_) => setState(() {}));
+    _controller.play();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Column(children: [
+      _controller.value.isInitialized
+          ? AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: Stack(
+                children: [
+                  VideoPlayer(_controller),
+                  ClosedCaption(
+                    text: _controller.value.caption.text,
+                    textStyle: const TextStyle(
+                      fontSize: 24,
+                      backgroundColor: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Container(),
+      IconButton(
+        onPressed: () {
+          setState(() {
+            _controller.value.isPlaying
+                ? _controller.pause()
+                : _controller.play();
+          });
+        },
+        icon: Icon(
+          _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+        ),
+      ),
+      IconButton(
+        onPressed: () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+            SystemChrome.setPreferredOrientations(
+              [DeviceOrientation.landscapeLeft],
+            );
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+            return MyVideoFullPage(_controller);
+          }));
+        },
+        icon: const Icon(Icons.fullscreen),
+      )
+    ]);
+  }
+}
+
+class MyVideoFullPage extends StatefulWidget {
+  const MyVideoFullPage(this.controller, {Key? key}) : super(key: key);
+
+  final VideoPlayerController controller;
+
+  @override
+  State<MyVideoFullPage> createState() => _MyVideoFullPageState();
+}
+
+class _MyVideoFullPageState extends State<MyVideoFullPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: Stack(
+        children: <Widget>[
+          Center(
+            child: AspectRatio(
+              aspectRatio: widget.controller.value.aspectRatio,
+              child: Stack(
+                children: [
+                  VideoPlayer(widget.controller),
+                  ClosedCaption(
+                    text: widget.controller.value.caption.text,
+                    // textStyle: const TextStyle(
+                    //   fontSize: 20,
+                    //   backgroundColor: Colors.white54,
+                    // ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            color: Colors.black45,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              color: Colors.white,
+              onPressed: () {
+                Navigator.pop(context);
+                SystemChrome.setPreferredOrientations(
+                  [DeviceOrientation.portraitUp],
+                );
+                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+              },
+            ),
+          )
+        ],
+      ),
+    );
   }
 }
