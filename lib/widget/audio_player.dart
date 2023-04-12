@@ -44,12 +44,10 @@ class _BuildAudioPlayerState extends State<BuildAudioPlayer> {
 
   void setAudioSource() async {
     await audioPlayer.setSourceDeviceFile(widget.audioPath);
-    print(audioPlayer);
     var duration = await audioPlayer.getDuration();
     setState(() {
       maxValue = duration?.inMilliseconds.toDouble() ?? 1;
     });
-    print(duration);
   }
 
   // 获取歌词

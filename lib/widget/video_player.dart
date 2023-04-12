@@ -1,9 +1,15 @@
+import 'dart:io';
+
+import 'package:auto_orientation/auto_orientation.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 class BuildVideoPlayer extends StatefulWidget {
-  const BuildVideoPlayer({Key? key}) : super(key: key);
+  const BuildVideoPlayer(this.videoPath, {Key? key}) : super(key: key);
+
+  final String videoPath;
 
   @override
   State<BuildVideoPlayer> createState() => _BuildVideoPlayerState();
@@ -12,17 +18,11 @@ class BuildVideoPlayer extends StatefulWidget {
 class _BuildVideoPlayerState extends State<BuildVideoPlayer> {
   late VideoPlayerController _controller;
 
-  Future<ClosedCaptionFile> _loadCaptions() async {
-    final String fileContents = await DefaultAssetBundle.of(context)
-        .loadString('assets/bumble_bee_captions.srt');
-    return SubRipCaptionFile(fileContents);
-  }
-
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset(
-      "assets/Butterfly-209.mp4",
+    _controller = VideoPlayerController.file(
+      File(widget.videoPath),
       closedCaptionFile: _loadCaptions(),
     );
     _controller.addListener(() {
@@ -39,6 +39,16 @@ class _BuildVideoPlayerState extends State<BuildVideoPlayer> {
     _controller.dispose();
   }
 
+  Future<ClosedCaptionFile> _loadCaptions() async {
+    var files = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ["srt"],
+    );
+    final String fileContents =
+        File(files?.files.single.path ?? "").readAsStringSync();
+    return SubRipCaptionFile(fileContents);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(children: [
@@ -46,6 +56,7 @@ class _BuildVideoPlayerState extends State<BuildVideoPlayer> {
           ? AspectRatio(
               aspectRatio: _controller.value.aspectRatio,
               child: Stack(
+                alignment: Alignment.bottomCenter,
                 children: [
                   VideoPlayer(_controller),
                   ClosedCaption(
@@ -55,6 +66,7 @@ class _BuildVideoPlayerState extends State<BuildVideoPlayer> {
                       backgroundColor: Colors.white54,
                     ),
                   ),
+                  VideoProgressIndicator(_controller, allowScrubbing: true),
                 ],
               ),
             )
@@ -74,9 +86,7 @@ class _BuildVideoPlayerState extends State<BuildVideoPlayer> {
       IconButton(
         onPressed: () {
           Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-            SystemChrome.setPreferredOrientations(
-              [DeviceOrientation.landscapeLeft],
-            );
+            AutoOrientation.landscapeAutoMode();
             SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
             return MyVideoFullPage(_controller);
           }));
@@ -98,43 +108,58 @@ class MyVideoFullPage extends StatefulWidget {
 
 class _MyVideoFullPageState extends State<MyVideoFullPage> {
   @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    AutoOrientation.portraitAutoMode();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      child: Stack(
-        children: <Widget>[
-          Center(
-            child: AspectRatio(
-              aspectRatio: widget.controller.value.aspectRatio,
-              child: Stack(
-                children: [
-                  VideoPlayer(widget.controller),
-                  ClosedCaption(
-                    text: widget.controller.value.caption.text,
-                    // textStyle: const TextStyle(
-                    //   fontSize: 20,
-                    //   backgroundColor: Colors.white54,
-                    // ),
-                  ),
-                ],
+    return Scaffold(
+      body: Container(
+        color: Colors.black,
+        child: Stack(
+          children: <Widget>[
+            Center(
+              child: AspectRatio(
+                aspectRatio: widget.controller.value.aspectRatio,
+                child: Stack(
+                  children: [
+                    VideoPlayer(widget.controller),
+                    ClosedCaption(
+                      text: widget.controller.value.caption.text,
+                      // textStyle: const TextStyle(
+                      //   fontSize: 20,
+                      //   backgroundColor: Colors.white54,
+                      // ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Card(
-            color: Colors.black45,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              color: Colors.white,
-              onPressed: () {
-                Navigator.pop(context);
-                SystemChrome.setPreferredOrientations(
-                  [DeviceOrientation.portraitUp],
-                );
-                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-              },
-            ),
-          )
-        ],
+            Card(
+              color: Colors.black45,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                color: Colors.white,
+                onPressed: () {
+                  Navigator.pop(context);
+                  AutoOrientation.portraitAutoMode();
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                },
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

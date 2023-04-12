@@ -46,7 +46,8 @@ class _MyAppState extends State<MyApp> {
           ElevatedButton(onPressed: getFile, child: const Text("选择MP3或MP4文件")),
           if (fileType == "mp3")
             BuildAudioPlayer(files?.files.single.path ?? ""),
-          if (fileType == "mp4") const BuildVideoPlayer(),
+          if (fileType == "mp4")
+            BuildVideoPlayer(files?.files.single.path ?? ""),
         ],
       ),
     );
