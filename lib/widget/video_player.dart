@@ -86,8 +86,6 @@ class _BuildVideoPlayerState extends State<BuildVideoPlayer> {
       IconButton(
         onPressed: () {
           Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-            AutoOrientation.landscapeAutoMode();
-            SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
             return MyVideoFullPage(_controller);
           }));
         },
@@ -110,8 +108,12 @@ class _MyVideoFullPageState extends State<MyVideoFullPage> {
   @override
   void initState() {
     super.initState();
+    AutoOrientation.landscapeAutoMode();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     widget.controller.addListener(() {
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     });
   }
 
@@ -124,41 +126,56 @@ class _MyVideoFullPageState extends State<MyVideoFullPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        color: Colors.black,
-        child: Stack(
-          children: <Widget>[
-            Center(
-              child: AspectRatio(
-                aspectRatio: widget.controller.value.aspectRatio,
-                child: Stack(
-                  children: [
-                    VideoPlayer(widget.controller),
-                    ClosedCaption(
-                      text: widget.controller.value.caption.text,
-                      // textStyle: const TextStyle(
-                      //   fontSize: 20,
-                      //   backgroundColor: Colors.white54,
-                      // ),
-                    ),
-                  ],
+    return WillPopScope(
+      onWillPop: () async {
+        AutoOrientation.portraitAutoMode();
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        Navigator.pop(context);
+        return false;
+      },
+      child: Scaffold(
+        body: Container(
+          color: Colors.black,
+          child: Stack(
+            children: <Widget>[
+              Center(
+                child: AspectRatio(
+                  aspectRatio: widget.controller.value.aspectRatio,
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      VideoPlayer(widget.controller),
+                      ClosedCaption(
+                        text: widget.controller.value.caption.text,
+                        textStyle: const TextStyle(
+                          fontSize: 20,
+                          backgroundColor: Colors.white54,
+                        ),
+                      ),
+                      VideoProgressIndicator(
+                        widget.controller,
+                        allowScrubbing: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Card(
-              color: Colors.black45,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                color: Colors.white,
-                onPressed: () {
-                  Navigator.pop(context);
-                  AutoOrientation.portraitAutoMode();
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                },
-              ),
-            )
-          ],
+              Card(
+                color: Colors.black45,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  color: Colors.white,
+                  onPressed: () {
+                    AutoOrientation.portraitAutoMode();
+                    SystemChrome.setEnabledSystemUIMode(
+                      SystemUiMode.edgeToEdge,
+                    );
+                    Navigator.pop(context);
+                  },
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
