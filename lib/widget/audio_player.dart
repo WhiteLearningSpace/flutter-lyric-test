@@ -23,6 +23,10 @@ class _BuildAudioPlayerState extends State<BuildAudioPlayer> {
   bool isPlaying = false;
   bool isTap = false;
 
+  // AnotherAudioRecorder? _recorder;
+  // Recording? _current;
+  // RecordingStatus _currentStatus = RecordingStatus.Unset;
+
   final LyricsModelBuilder lyricsModelBuilder = LyricsModelBuilder.create();
   LyricsReaderModel? lyricsReaderModel;
   var lyricUI = UINetease();
@@ -66,12 +70,8 @@ class _BuildAudioPlayerState extends State<BuildAudioPlayer> {
     refreshLyric();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    setAudioSource();
-    getLyric();
-
+  // 初始化音频播放器
+  void initAudioPlayer() {
     audioPlayer.setReleaseMode(ReleaseMode.loop);
     audioPlayer.onDurationChanged.listen((event) {
       setState(() {
@@ -91,6 +91,16 @@ class _BuildAudioPlayerState extends State<BuildAudioPlayer> {
     });
   }
 
+  void initRecorder() async {}
+
+  @override
+  void initState() {
+    super.initState();
+    setAudioSource();
+    getLyric();
+    initAudioPlayer();
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -107,6 +117,7 @@ class _BuildAudioPlayerState extends State<BuildAudioPlayer> {
           "${Duration(milliseconds: sliderCurrentPos.toInt())}"
           "/${Duration(milliseconds: maxValue.toInt())}",
         ),
+        buildRecorder(),
         ...buildPlayerControl(),
       ],
     );
@@ -242,5 +253,10 @@ class _BuildAudioPlayerState extends State<BuildAudioPlayer> {
         ],
       ),
     ];
+  }
+
+  // 录音功能
+  Widget buildRecorder() {
+    return IconButton(onPressed: () {}, icon: const Icon(Icons.mic));
   }
 }
