@@ -135,7 +135,6 @@ class RecorderExampleState extends State<RecorderExample> {
   }
 
   _init() async {
-    await AnotherAudioRecorder.hasPermissions;
     try {
       if (await AnotherAudioRecorder.hasPermissions) {
         String customPath = '/another_audio_recorder_';
@@ -180,10 +179,6 @@ class RecorderExampleState extends State<RecorderExample> {
   _start() async {
     try {
       await _recorder?.start();
-      var recording = await _recorder?.current(channel: 0);
-      setState(() {
-        _current = recording;
-      });
 
       Timer.periodic(const Duration(milliseconds: 50), (Timer t) async {
         if (_currentStatus == RecordingStatus.Stopped) {
