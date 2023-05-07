@@ -1,7 +1,9 @@
+import 'dart:developer';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:lyrics_reader_test/widget/audio_player.dart';
-import 'package:lyrics_reader_test/widget/video_player.dart';
+import 'package:lyrics_reader_test/widget/audio_player/audio_player.dart';
+import 'package:lyrics_reader_test/widget/video_player/video_player.dart';
 
 void main() {
   runApp(
@@ -36,6 +38,7 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       fileType = files?.files.single.extension;
     });
+    log("音频文件的路径${files?.files.single.path}");
   }
 
   @override
@@ -44,8 +47,7 @@ class _MyAppState extends State<MyApp> {
       child: Column(
         children: [
           ElevatedButton(onPressed: getFile, child: const Text("选择MP3或MP4文件")),
-          if (fileType == "mp3")
-            BuildAudioPlayer(files?.files.single.path ?? ""),
+          if (fileType == "mp3") MyAudioPlayer(files?.files.single.path ?? ""),
           if (fileType == "mp4")
             BuildVideoPlayer(files?.files.single.path ?? ""),
         ],
